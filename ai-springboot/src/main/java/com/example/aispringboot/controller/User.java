@@ -40,4 +40,10 @@ public class User {
         UserLoginResponseDTO.UerDetailResponseDTO result = userService.getUserById(userId);
         return Result.ok(result);
     }
+
+    @PostMapping("/logout")
+    public Result<Void> logout(){
+        // JWT 无状态，服务端无需额外处理，由前端清除 token
+        return Result.ok(null);
+    }
 }

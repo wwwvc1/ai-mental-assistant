@@ -48,6 +48,11 @@ const handleCommand = (command) => {
                 localStorage.removeItem('userInfo')
                 // 跳转到登录页
                 router.push('/auth/login')
+            }).catch(() => {
+                // 后端 logout 接口失败，仍然清除前端状态
+                localStorage.removeItem('token')
+                localStorage.removeItem('userInfo')
+                router.push('/auth/login')
             })
         })
     }

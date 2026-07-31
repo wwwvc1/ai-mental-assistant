@@ -23,6 +23,8 @@ public class SecurityConfig {
             "/api/test",
             "/api/user/login",
             "/api/user/add",
+            "/error",
+            "/favicon.ico"
     };
 
     public static Boolean isPublicPath(String requestUrl){
@@ -44,7 +46,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_PATHS).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
 //                添加jwt 过滤器
                 .addFilterBefore(jwtAuthticationFilter(), UsernamePasswordAuthenticationFilter.class);

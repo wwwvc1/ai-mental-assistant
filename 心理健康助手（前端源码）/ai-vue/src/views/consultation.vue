@@ -232,7 +232,7 @@ const currentEmotion = ref({
 
 const loadSessionEmotion = (sessionId) => {
    // 确保sessionID格式正确
-    const id = sessionId.toString().startsWith('session_') ? sessionId : `session_${sessionId}`
+    const id = sessionId.toString().startsWith('sessionId_') ? sessionId : `sessionId_${sessionId}`
 
     getSessionEmotion(id).then(res => {
         console.log(res)
@@ -398,8 +398,12 @@ const startAIResponse = (sessionId, userMessage) => {
             }
             const payload = JSON.parse(raw)
             const ok = String(payload.code) === '200'
-            if (ok && payload.data && payload.data.content) {
-                aiMessage.content += payload.data.content
+            if (ok && payload.data) {
+                // 后端 SSE 数据在 payload.data.message 中
+                const content = payload.data.content || payload.data.message
+                if (content) {
+                    aiMessage.content += content
+                }
             } else if (!ok) {
                 // 错误回复的显示
                 handleError(payload.message || 'AI回复失败')
@@ -449,7 +453,7 @@ const handleSessionClick = (session) => {
     loadSessionEmotion(session.id)
     // 更新当前会话对象数据
     const sessionData = {
-        sessionId: "session_" + session.id,
+        sessionId: "sessionId_" + session.id,
         status: 'ACTIVE',
         sessionTitle: session.sessionTitle
     }
