@@ -45,8 +45,14 @@ const handleLogout = () => {
     logout().then(() => {
         // 清除缓存
         localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
         localStorage.removeItem('userInfo')
         // 跳转到登录页
+        router.push('/auth/login')
+    }).catch(() => {
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('userInfo')
         router.push('/auth/login')
     })
 }

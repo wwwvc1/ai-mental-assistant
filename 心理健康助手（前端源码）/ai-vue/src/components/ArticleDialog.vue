@@ -70,6 +70,7 @@ import { ElMessage } from 'element-plus'
 import { uploadFile, createArticle, updateArticle } from '@/api/admin'
 import { fileBaseUrl } from '@/config/index.js'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import { notifyOnce } from '@/utils/notice'
 
 const props = defineProps({
     modelValue: {
@@ -176,14 +177,18 @@ const businessId = ref(null)
 const handleUploadRequest = async ({ file }) => {
     // UUID生成
     businessId.value = crypto.randomUUID()
-    const fileRes = await uploadFile(file, {
-        businessId: businessId.value
-    })
-    console.log(fileRes)
+    try {
+        const fileRes = await uploadFile(file, {
+            businessId: businessId.value
+        })
+        console.log(fileRes)
 
-    // 拼接完整的图片地址
-    imgUrl.value = fileBaseUrl + fileRes.filePath
-    formData.coverImage = fileRes.filePath
+        // 拼接完整的图片地址
+        imgUrl.value = fileBaseUrl + fileRes.filePath
+        formData.coverImage = fileRes.filePath
+    } catch (err) {
+        notifyOnce('article-upload', '图片上传功能暂未开放')
+    }
 }
 
 const handleRemove = () => {
@@ -214,32 +219,27 @@ const btnPreview = ref(false)
 const formRef = ref()
 const loading = ref(false)
 const handleSubmit = () => {
-    formRef.value.validate((valid, fields) => {
-        if (valid) {
-            loading.value = true
-        }
-        console.log(formData, 'FormData')
+    formRef.value.validate((valid) => {
+        if (!valid) return
+        loading.value = true
+
         const submitData = {
             ...formData,
-            tags: formData.tagArray.join(',')
+            tags: (formData.tagArray || []).join(',')
         }
         delete submitData.tagArray
-        
-        if (!isEdit.value) {
-            submitData.id = businessId.value
-            createArticle(submitData).then(res => {
-                loading.value = false
-                emit('success')
-            })
-        } else {
-            updateArticle(props.article.id, submitData).then(res => {
-                loading.value = false
-                emit('success')
-            })
-        }
 
-        
+        const request = isEdit.value
+            ? updateArticle(props.article.id, submitData)
+            : createArticle({ ...submitData, id: businessId.value })
 
+        request.then(() => {
+            loading.value = false
+            emit('success')
+        }).catch(() => {
+            loading.value = false
+            notifyOnce('article-submit', '文章保存功能暂未开放')
+        })
     })
 }
 </script>

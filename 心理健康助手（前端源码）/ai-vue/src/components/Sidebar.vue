@@ -13,7 +13,7 @@
                     <p class="brand-subtitle">管理后台</p>
                 </div>
             </div>
-            <el-menu-item @click="selectMenu" v-for="item in router.options.routes[0].children" :key="item.path" :index="item.path">
+            <el-menu-item @click="selectMenu(item)" v-for="item in router.options.routes[0].children" :key="item.path" :index="item.path">
                 <el-icon><component :is="item.meta.icon" /></el-icon>
                 <span>{{ item.meta.title }}</span>
             </el-menu-item> 
@@ -30,10 +30,9 @@ const iconUrl = new URL('@/assets/images/机器人.png', import.meta.url).href
 
 const isCollapse = computed(() => useAdminStore().isCollapse)
 
-const selectMenu = (key) => {
-    console.log(key)
-    const currentRoute = router.options.routes[0]
-    router.push(`${currentRoute.path}/${key.index}`)
+const selectMenu = (item) => {
+    if (!item?.path) return
+    router.push(`/back/${item.path}`)
 }
 
 </script>

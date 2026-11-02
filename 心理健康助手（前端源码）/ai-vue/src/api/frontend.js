@@ -1,5 +1,7 @@
 import service from '@/utils/request'
 
+const EMPTY_PAGE = () => ({ records: [], total: 0 })
+
 export const register = (data) => {
     return service.post('/user/add', data)
 }
@@ -29,9 +31,9 @@ export const addEmotionDiary = (data) => {
 }
 
 export const getKnowledgeList = (params) => {
-    return service.get('/knowledge/article/page', { params })
+    return service.get('/knowledge/article/page', { params, _fallback: EMPTY_PAGE })
 }
 
 export const getKnowledgeDetail = (articleId) => {
-    return service.get(`/knowledge/article/${articleId}`)
+    return service.get(`/knowledge/article/${articleId}`, { _fallback: null })
 }

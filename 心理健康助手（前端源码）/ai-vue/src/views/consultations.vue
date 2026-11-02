@@ -93,10 +93,13 @@ const viewSessionDetail = (row) => {
     showDetailDialog.value = true
     getSessionDetail(row.id).then(res => {
         loadingMessages.value = false
-        sessionMessages.value = res
+        sessionMessages.value = Array.isArray(res) ? res : []
         sessionDetail.value = row
+    }).catch(() => {
+        loadingMessages.value = false
+        sessionMessages.value = []
     })
-    
+
 }
 
 const handleChange = (page) => {
@@ -105,11 +108,16 @@ const handleChange = (page) => {
 }
 
 const handleSearch = () => {
-    getConsultationPage(pagination).then(res => {
-        const { records, total } = res
-        console.log(records)
-        tableData.value = records
-        pagination.total = total
+    getConsultationPage({
+        pageNum: pagination.currentPage,
+        pageSize: pagination.size
+    }).then(res => {
+        const list = Array.isArray(res) ? res : (res?.records ?? [])
+        tableData.value = list
+        pagination.total = res?.total ?? list.length
+    }).catch(() => {
+        tableData.value = []
+        pagination.total = 0
     })
 }
 

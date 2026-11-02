@@ -90,7 +90,7 @@
               </div>
               <div class="stat-item">
                 <div class="stat-label">活跃用户</div>
-                <div class="stat-value">{{ aiData.systemOverview.activeUsers }}</div>
+                <div class="stat-value">{{ aiData.systemOverview?.activeUsers ?? 0 }}</div>
               </div>
             </div>
             <div ref="consultationChartRef" style="width: 100%; height:260px"></div>
@@ -113,7 +113,7 @@
   </div>
 </template>
 <script setup>
-import { getAnalyticsOverview } from '@/api/admin'
+import { getAnalyticsOverview, EMPTY_ANALYTICS } from '@/api/admin'
 import { onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 
@@ -123,7 +123,7 @@ const iconUrl2 = new URL('@/assets/images/like.png', import.meta.url).href
 const iconUrl3 = new URL('@/assets/images/comments.png', import.meta.url).href
 const iconUrl4 = new URL('@/assets/images/smile.png', import.meta.url).href
 
-const aiData = ref({})
+const aiData = ref(EMPTY_ANALYTICS())
 
 // 初始化图标
 const initCharts = () => {
@@ -144,7 +144,7 @@ const initEmotionChart = () => {
   // 创建echarts实例
   emotionChart = echarts.init(emotionChartRef.value)
   // 获取情绪趋势的数据
-  const TrendData = aiData.value.emotionTrend
+  const TrendData = aiData.value.emotionTrend ?? []
   // 配置项
   const option = {
     title: {
@@ -246,7 +246,7 @@ const initConsultationChart = () => {
   // 创建echarts实例
   consultationChart = echarts.init(consultationChartRef.value)
   // 获取数据
-  const dailyTrend = aiData.value.consultationStats.dailyTrend
+  const dailyTrend = aiData.value.consultationStats?.dailyTrend ?? []
   const option = {
     title: {
       text: '咨询活动统计',
@@ -365,7 +365,7 @@ const initUserActivityChart = () => {
   // 创建echarts实例
   userActivityChart = echarts.init(userActivityChartRef.value)
   // 获取数据
-  const activityData = aiData.value.userActivity
+  const activityData = aiData.value.userActivity ?? []
   const option = {
     title: {
       text: '用户活跃度趋势',
@@ -501,8 +501,10 @@ const initUserActivityChart = () => {
 
 onMounted(() => {
   getAnalyticsOverview().then(res => {
-    console.log(res)
-    aiData.value = res
+    aiData.value = { ...EMPTY_ANALYTICS(), ...(res || {}) }
+    initCharts()
+  }).catch(() => {
+    aiData.value = EMPTY_ANALYTICS()
     initCharts()
   })
 })

@@ -6,10 +6,10 @@ spring:
 
   ai:
     openai:
-      api-key: 2FCxKjha7m18OHyiFcpFLAtOg0IKd68rf4tHFnP6eRnhNZrENTToOFGLr4ULckl9O
-      base-url: https://api.stepfun.ai/step_plan/v1
+      api-key: sk-irb2XnODg6WSYbNCr4hx55aOmSSdUOSm
+      base-url: https://token.sensenova.cn/v1
       chat:
-        model: step-3.5-flash
+        model: sensenova-6.8-flash-lite
 
 ##服务器配置
 server:

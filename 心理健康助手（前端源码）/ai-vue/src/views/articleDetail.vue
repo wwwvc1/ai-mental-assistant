@@ -6,7 +6,7 @@
                 <h1>知识文章详情</h1>
             </div>
         </div>
-        <div class="content">
+        <div class="content" v-if="articleDetail.id">
             <div class="diary-card">
                 <p class="title">文章信息</p>
                 <div class="sub-title">
@@ -42,6 +42,7 @@
                 </div>
             </div>
         </div>
+        <el-empty v-else description="文章不存在或接口暂未开放" />
     </div>
 </template>
 <script setup>
@@ -73,7 +74,9 @@ const formatContent = (content) => {
 onMounted(() => {
     console.log(props)
     getKnowledgeDetail(props.id).then(res => {
-        articleDetail.value = res
+        articleDetail.value = res || {}
+    }).catch(() => {
+        articleDetail.value = {}
     })
 })
 </script>

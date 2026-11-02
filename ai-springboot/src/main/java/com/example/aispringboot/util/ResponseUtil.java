@@ -13,6 +13,10 @@ import java.nio.charset.StandardCharsets;
 
 public class ResponseUtil {
     public static void WriteError(HttpServletResponse response, ResultCode resultCode) {
+        // 过滤器可能被执行两次或响应已由别处写出，避免重复写响应
+        if (response.isCommitted()) {
+            return;
+        }
         int statusCode = switch (resultCode) {
             case UNAUTHORIZED, ACCESS_UNAUTHORIZED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_BLOCKED ->
                     HttpStatus.UNAUTHORIZED.value();

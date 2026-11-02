@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserLoginResponseDTO {
     private String token;
+    private String refreshToken;
     private String roletype;
     private UerDetailResponseDTO userinfo;
 

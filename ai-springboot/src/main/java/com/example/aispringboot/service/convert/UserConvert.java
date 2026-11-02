@@ -32,10 +32,12 @@ public class UserConvert {
 
     }
 
-    public static UserLoginResponseDTO entityToLoginResponse(String token ,UserLoginResponseDTO.UerDetailResponseDTO userinfo){
+    public static UserLoginResponseDTO entityToLoginResponse(String token, String refreshToken,
+                                                             UserLoginResponseDTO.UerDetailResponseDTO userinfo){
         return UserLoginResponseDTO.builder()
                 .userinfo(userinfo)
                 .token(token)
+                .refreshToken(refreshToken)
                 .roletype(userinfo.getUserType().toString())
                 .build();
     }

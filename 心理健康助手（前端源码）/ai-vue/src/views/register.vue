@@ -71,19 +71,19 @@ const rules = reactive({
 const submitFormRef = ref(null)
 const submitForm = async (formEl) => {
     if (!formEl) return
-    formEl.validate(async (valid) => {
-        register(formData).then(({ data }) => {
-            console.log(data)
-            if (!data) {
-                ElMessage.success('注册成功')
-                // 注册成功后跳转到登录页
-                router.push('/auth/login')
-            }
-            if (data.code === "BUSINESS_ERROR") {
-               ElMessage.error(data.message)
-            }
-        })
-    })
+    const valid = await formEl.validate().catch(() => false)
+    if (!valid) return
+
+    try {
+        await register(formData)
+        ElMessage.success('注册成功')
+        // 注册成功后跳转到登录页
+        router.push('/auth/login')
+    } catch (err) {
+        if (!err?._notified) {
+            ElMessage.error(err?.message || '注册失败')
+        }
+    }
 }
 </script>
 

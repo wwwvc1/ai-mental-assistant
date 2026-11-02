@@ -133,6 +133,7 @@ import PageHead from '@/components/PageHead.vue'
 import TableSearch from '@/components/TableSearch.vue'
 import { getEmotionalPage, deleteEmotional } from '@/api/admin'
 import { ElMessageBox } from 'element-plus'
+import { notifyOnce } from '@/utils/notice'
 
 const getEmotionTagType = (emotion) => {
     const emotionTypes = {
@@ -222,13 +223,21 @@ const handleChange = (page) => {
 
 const handleSearch = async (formData) => {
     const params = {
-        ...pagination,
+        pageNum: pagination.current,
+        pageSize: pagination.size,
         ...formData
     }
 
-    const { records, total } = await getEmotionalPage(params)
-    tableData.value = records
-    pagination.total = total
+    try {
+        const res = await getEmotionalPage(params)
+        const list = Array.isArray(res) ? res : (res?.records ?? [])
+        tableData.value = list
+        pagination.total = res?.total ?? list.length
+    } catch (err) {
+        tableData.value = []
+        pagination.total = 0
+        notifyOnce('emotion-search', err?.message || '情绪日记列表暂不可用')
+    }
 }
 
 // 详情
@@ -256,6 +265,8 @@ const handleDelete = (row) => {
         // 确认删除
         deleteEmotional(row.id).then(() => {
             handleSearch()
+        }).catch(() => {
+            notifyOnce('emotion-delete', '删除情绪日记功能暂未开放')
         })
     })
 }

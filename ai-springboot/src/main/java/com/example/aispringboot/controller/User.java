@@ -1,10 +1,12 @@
 package com.example.aispringboot.controller;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.aispringboot.DTO.command.RefreshTokenCommandDTO;
 import com.example.aispringboot.DTO.command.UserLoginCommandDTO;
 import com.example.aispringboot.DTO.command.UserRegisterCommandDTO;
+import com.example.aispringboot.DTO.response.TokenRefreshResponseDTO;
 import com.example.aispringboot.DTO.response.UserLoginResponseDTO;
 import com.example.aispringboot.common.Result;
+import com.example.aispringboot.common.ResultCode;
 import com.example.aispringboot.service.UserService;
 import com.example.aispringboot.util.JwtTokenUtil;
 import jakarta.annotation.Resource;
@@ -31,12 +33,19 @@ public class User {
         return Result.ok(result);
     }
 
+    @PostMapping("/refresh")
+    public Result<TokenRefreshResponseDTO> refresh(@Valid @RequestBody RefreshTokenCommandDTO refreshTokenCommandDTO){
+        TokenRefreshResponseDTO result = userService.refresh(refreshTokenCommandDTO.getRefreshToken());
+        return Result.ok(result);
+    }
+
     @GetMapping("/current")
     public Result<UserLoginResponseDTO.UerDetailResponseDTO> getCurrentUser(){
 //        如何在token中获取当前用户id
-        String token =  JwtTokenUtil.getCurrentToken() ;
-        DecodedJWT jwt = JwtTokenUtil.veryfyToken( token);
-        Long userId = jwt.getClaim("userId").asLong();
+        Long userId = JwtTokenUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(ResultCode.UNAUTHORIZED.getcode(), ResultCode.UNAUTHORIZED.getmsg());
+        }
         UserLoginResponseDTO.UerDetailResponseDTO result = userService.getUserById(userId);
         return Result.ok(result);
     }

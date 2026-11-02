@@ -24,5 +24,11 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "vite": "^7.2.4"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.5.6": true,
+    "vue-demi@0.14.10": true,
+    "es5-ext@0.10.64": true,
+    "esbuild@0.27.2": true
   }
 }

@@ -81,6 +81,7 @@
     import { dayjs, ElMessage } from 'element-plus'
     import { ref, reactive } from 'vue'
     import { addEmotionDiary } from '@/api/frontend'
+    import { notifyOnce } from '@/utils/notice'
 
     // 情绪评分
     const emotionStatus = ['绝望崩溃', '消沉抑郁', '焦虑烦躁', '低落不悦', '平静淡然', '轻松惬意', '愉悦舒心', '欢欣满足', '兴奋欣喜', '极致幸福']
@@ -132,6 +133,8 @@
         addEmotionDiary(diaryForm).then(() => {
             ElMessage.success('提交成功')
             resetForm()
+        }).catch(() => {
+            notifyOnce('emotion-diary', '情绪日记功能暂未开放')
         })
     }
 

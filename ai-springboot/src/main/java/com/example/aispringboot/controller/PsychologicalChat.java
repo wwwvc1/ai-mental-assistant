@@ -1,7 +1,6 @@
 package com.example.aispringboot.controller;
 
 import cn.hutool.json.JSONUtil;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.aispringboot.AiService.PsychologicalSupportService;
 import com.example.aispringboot.AiService.StructOutPut;
 import com.example.aispringboot.DTO.command.ConsultationSessionCreateDTO;
@@ -40,18 +39,17 @@ public class PsychologicalChat {
     @PostMapping("/session/start")
     public Result<StructOutPut.StreamChartSession> startSession(@Valid @RequestBody ConsultationSessionCreateDTO createDTO){
 //         获取当前用户id
-        String token =  JwtTokenUtil.getCurrentToken() ;
-        DecodedJWT jwt = JwtTokenUtil.veryfyToken( token);
-        Long userId = jwt.getClaim("userId").asLong();
+        Long userId = JwtTokenUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(ResultCode.UNAUTHORIZED.getcode(), ResultCode.UNAUTHORIZED.getmsg());
+        }
         StructOutPut.StreamChartSession session = psychologicalSupportService.startSession(userId,createDTO);
         return Result.ok(session);
     }
 
     @PostMapping(value = "/stream",produces = "text/event-stream")
     public Flux<ServerSentEvent<String>> SteamChart(@Valid @RequestBody ConsultationStreamDTO streamDTO){
-        String token =  JwtTokenUtil.getCurrentToken() ;
-        DecodedJWT jwt = JwtTokenUtil.veryfyToken( token);
-        Long userId = jwt.getClaim("userId").asLong();
+        Long userId = JwtTokenUtil.getCurrentUserId();
 
         if (userId == null){
             return Flux.just(ServerSentEvent.<String>builder()
@@ -81,9 +79,10 @@ public class PsychologicalChat {
     public Result<List<Map<String, Object>>> getSessionList(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        String token = JwtTokenUtil.getCurrentToken();
-        DecodedJWT jwt = JwtTokenUtil.veryfyToken(token);
-        Long userId = jwt.getClaim("userId").asLong();
+        Long userId = JwtTokenUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(ResultCode.UNAUTHORIZED.getcode(), ResultCode.UNAUTHORIZED.getmsg());
+        }
 
         List<Map<String, Object>> sessions = consultationSessionService.getSessionList(userId, pageNum, pageSize);
         return Result.ok(sessions);
@@ -94,8 +93,10 @@ public class PsychologicalChat {
      */
     @GetMapping("/sessions/{sessionId}/messages")
     public Result<List<ConsultationMessage>> getSessionMessages(@PathVariable Long sessionId) {
-        String token = JwtTokenUtil.getCurrentToken();
-        JwtTokenUtil.veryfyToken(token);
+        Long userId = JwtTokenUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(ResultCode.UNAUTHORIZED.getcode(), ResultCode.UNAUTHORIZED.getmsg());
+        }
 
         List<ConsultationMessage> messages = consultationMessageService.getMessagesBySessionId(sessionId);
         return Result.ok(messages);
@@ -106,8 +107,10 @@ public class PsychologicalChat {
      */
     @GetMapping("/session/{sessionId}/emotion")
     public Result<Map<String, Object>> getSessionEmotion(@PathVariable String sessionId) {
-        String token = JwtTokenUtil.getCurrentToken();
-        JwtTokenUtil.veryfyToken(token);
+        Long userId = JwtTokenUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.error(ResultCode.UNAUTHORIZED.getcode(), ResultCode.UNAUTHORIZED.getmsg());
+        }
 
         // 从 sessionId 中提取数字 ID
         Long dbSessionId = null;

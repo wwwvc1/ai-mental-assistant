@@ -193,6 +193,8 @@ import { ElMessage } from 'element-plus'
 import { ChatRound, DeleteFilled } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
+import { getAccessToken, refreshAccessToken, redirectToLogin } from '@/utils/request'
+import { notifyOnce } from '@/utils/notice'
 
 const iconUrl = new URL('@/assets/images/robot-fill.png', import.meta.url).href
 const iconUrl1 = new URL('@/assets/images/like.png', import.meta.url).href
@@ -236,8 +238,10 @@ const loadSessionEmotion = (sessionId) => {
 
     getSessionEmotion(id).then(res => {
         console.log(res)
-        currentEmotion.value = res
-    })
+        if (res) {
+            currentEmotion.value = res
+        }
+    }).catch(() => {})
 }
 
 const getIntensityClass = (score) => {
@@ -341,6 +345,8 @@ const startNewSession = (message) => {
 
        // 开始流式对话
        startAIResponse(currentSession.value.sessionId, message)
+    }).catch(() => {
+       ElMessage.error('创建会话失败，请稍后重试')
     })
 }
 
@@ -368,8 +374,8 @@ const startAIResponse = (sessionId, userMessage) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Token': localStorage.getItem('token'),
-            'Accept': 'text/event-stream'
+            'Accept': 'text/event-stream',
+            ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {})
         },
         body: JSON.stringify({
             sessionId,
@@ -377,9 +383,15 @@ const startAIResponse = (sessionId, userMessage) => {
         }),
         signal: ctrl.signal,
         onopen: (response) => {
-            console.log(response)
-            if (response.headers.get('Content-Type') !== 'text/event-stream') {
-                ElMessage.error('服务器返回非流式数据')
+            if (response.status === 401) {
+                throw Object.assign(new Error('UNAUTHORIZED'), { status: 401 })
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            const contentType = response.headers.get('Content-Type') || ''
+            if (!contentType.includes('text/event-stream')) {
+                throw new Error('服务器返回非流式数据')
             }
         },
         onmessage: (event) => {
@@ -410,13 +422,30 @@ const startAIResponse = (sessionId, userMessage) => {
             }
         },
         onerror: (err) => {
-            handleError(err || 'AI回复失败')
+            // 必须抛出，否则 fetch-event-source 会用同一个过期 token 无限重试
             throw err
         },
         onclose: () => {
             // 开始情绪分析
             loadSessionEmotion(currentSession.value.sessionId)
         }
+    }).catch(async (err) => {
+        // 收到 done 后主动 abort 不算错误
+        if (err?.name === 'AbortError') return
+
+        if (err?.status === 401) {
+            try {
+                await refreshAccessToken()
+                isAiTyping.value = false
+                // 移除失败占位的 AI 消息后重试一次
+                messages.value = messages.value.filter(item => item.id !== aiMessage.id)
+                return startAIResponse(sessionId, userMessage)
+            } catch (refreshError) {
+                redirectToLogin()
+                return
+            }
+        }
+        handleError(err)
     })
 
 }
@@ -438,7 +467,9 @@ const getSessionPage = () => {
         pageSize: 10
     }).then(res => {
         console.log(res)
-        sessionList.value = res.records
+        sessionList.value = Array.isArray(res) ? res : (res?.records ?? [])
+    }).catch(() => {
+        sessionList.value = []
     })
 }
 
@@ -448,7 +479,9 @@ const handleSessionClick = (session) => {
     // 点击会话时，获取会话详情
     getSessionDetail(session.id).then(res => {
         console.log(res)
-        messages.value = res
+        messages.value = Array.isArray(res) ? res : []
+    }).catch(() => {
+        messages.value = []
     })
     loadSessionEmotion(session.id)
     // 更新当前会话对象数据
@@ -461,9 +494,11 @@ const handleSessionClick = (session) => {
 }
 
 const handleDeleteSession = (sessionId) => {
-    deleteSession(sessionId).then(res => {
+    deleteSession(sessionId).then(() => {
         ElMessage.success('删除成功')
         getSessionPage()
+    }).catch(() => {
+        notifyOnce('delete-session', '删除会话功能暂未开放')
     })
 }
 

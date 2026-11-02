@@ -52,6 +52,7 @@ import TableSearch from '@/components/TableSearch.vue'
 import { categoryTree, articlePage, getArticleDetail, changeArticleStatus, deleteArticle } from '@/api/admin'
 import ArticleDialog from '@/components/ArticleDialog.vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { notifyOnce } from '@/utils/notice'
 
 
 const formItem = [
@@ -80,13 +81,21 @@ const handleSearch = async (formData) => {
     console.log(formData, '查询参数')
 
     const params = {
-        ...pagination,
+        pageNum: pagination.currentPage,
+        pageSize: pagination.size,
         ...formData
     }
 
-    const { records, total } = await articlePage(params)
-    tableData.value = records
-    pagination.total = total
+    try {
+        const res = await articlePage(params)
+        const list = Array.isArray(res) ? res : (res?.records ?? [])
+        tableData.value = list
+        pagination.total = res?.total ?? list.length
+    } catch (err) {
+        tableData.value = []
+        pagination.total = 0
+        notifyOnce('article-search', err?.message || '文章列表暂不可用')
+    }
 }
 
 const handleChange = (page) => {
@@ -120,8 +129,14 @@ const handleEdit = (row) => {
         // 编辑
         getArticleDetail(row.id).then(res => {
             console.log(res, '编辑详情')
+            if (!res) {
+                notifyOnce('article-detail', '文章详情接口暂未开放')
+                return
+            }
             currentArticle.value = res
             dialogVisible.value = true
+        }).catch(() => {
+            notifyOnce('article-detail', '文章详情接口暂未开放')
         })
     }
     
@@ -141,6 +156,8 @@ const handlePublish = (row) => {
         changeArticleStatus(row.id, { status: 1 }).then(res => {
             ElMessage.success('发布成功')
             handleSearch()
+        }).catch(() => {
+            notifyOnce('article-op', '文章发布功能暂未开放')
         })
     })
 }
@@ -158,6 +175,8 @@ const handleUnpublish = (row) => {
         changeArticleStatus(row.id, { status: 2 }).then(res => {
             ElMessage.success('下线成功')
             handleSearch()
+        }).catch(() => {
+            notifyOnce('article-op', '文章下线功能暂未开放')
         })
     })
 }
@@ -175,22 +194,28 @@ const handleDelete = (row) => {
         deleteArticle(row.id).then(res => {
             ElMessage.success('删除成功')
             handleSearch()
+        }).catch(() => {
+            notifyOnce('article-op', '文章删除功能暂未开放')
         })
     })
 }
 
 onMounted(async () => {
-    const data = await categoryTree()
-    
-    categories.value = data.map(item => {
-        categoryMap[item.id] = item.categoryName
-        return {
-            label: item.categoryName,
-            value: item.id
-        }
-    })
-    console.log(categories.value)
-    formItem[1].options = categories.value
+    try {
+        const data = await categoryTree()
+        categories.value = (Array.isArray(data) ? data : []).map(item => {
+            categoryMap[item.id] = item.categoryName
+            return {
+                label: item.categoryName,
+                value: item.id
+            }
+        })
+        console.log(categories.value)
+        formItem[1].options = categories.value
+    } catch (err) {
+        categories.value = []
+        formItem[1].options = []
+    }
 
     // 获取列表
     handleSearch()

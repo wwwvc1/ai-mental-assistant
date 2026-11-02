@@ -1,16 +1,29 @@
 import service from '@/utils/request'
 
+export const EMPTY_PAGE = () => ({ records: [], total: 0 })
+
+export const EMPTY_ANALYTICS = () => ({
+    systemOverview: null,
+    emotionTrend: [],
+    consultationStats: {
+        totalSessions: 0,
+        avgDurationMinutes: 0,
+        dailyTrend: []
+    },
+    userActivity: []
+})
+
 export function login(data) {
     return service.post('/user/login', data)
 }
 
 
 export function categoryTree() {
-    return service.get('/knowledge/category/tree')
+    return service.get('/knowledge/category/tree', { _fallback: () => [] })
 }
 
 export function articlePage(params) {
-     return service.get('/knowledge/article/page', { params })
+     return service.get('/knowledge/article/page', { params, _fallback: EMPTY_PAGE })
 }
 
 export function uploadFile(file, businessInfo) {
@@ -23,7 +36,8 @@ export function uploadFile(file, businessInfo) {
     return service.post('/file/upload', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000
     })
 }
 
@@ -33,7 +47,7 @@ export function createArticle(data) {
 }
 
 export function getArticleDetail(id) {
-    return service.get(`/knowledge/article/${id}`)
+    return service.get(`/knowledge/article/${id}`, { _fallback: null })
 }
 
 
@@ -58,7 +72,7 @@ export function getSessionDetail(sessionId) {
 }
 
 export function getEmotionalPage(params) {
-    return service.get('/emotion-diary/admin/page', { params })
+    return service.get('/emotion-diary/admin/page', { params, _fallback: EMPTY_PAGE })
 }
 
 export function deleteEmotional(id) {
@@ -66,7 +80,7 @@ export function deleteEmotional(id) {
 }
 
 export function getAnalyticsOverview() {
-    return service.get(`/data-analytics/overview`)
+    return service.get(`/data-analytics/overview`, { _fallback: EMPTY_ANALYTICS })
 }
 
 export function logout() {

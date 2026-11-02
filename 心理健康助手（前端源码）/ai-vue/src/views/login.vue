@@ -33,6 +33,7 @@
 </template>
 <script setup>
 import { ref, reactive } from 'vue'
+import { ElMessage } from 'element-plus'
 import { login } from '@/api/admin'
 import { useRouter } from 'vue-router'
 
@@ -55,29 +56,33 @@ const rules = reactive({
 const router = useRouter()
 const submitForm = async (formEl) => {
     if (!formEl) return
-    await formEl.validate((valid, fields) => {
-        if (valid) {
-            console.log(formData, 'formData')
-            login(formData).then(data => {
-                // 判断token是否存在
-                if (!data || !data.token) {
-                    ElMessage.error('登录失败，请检查用户名或密码')
-                    return
-                }
-                // 登录成功，保存token和用户信息
-                localStorage.setItem('token', data.token)
-                localStorage.setItem('userInfo', JSON.stringify(data.userInfo || data.userinfo))
-                // 根据用户角色决定跳转的路径
-                if (data.userInfo?.userType === 2 || data.userinfo?.userType === 2) {
-                    router.push('/back/dashboard')
-                } else {
-                    router.push('/')
-                }
-            }).catch(() => {
-                ElMessage.error('登录失败，请检查用户名或密码')
-            })
+    const valid = await formEl.validate().catch(() => false)
+    if (!valid) return
+
+    try {
+        const data = await login(formData)
+        // 判断token是否存在
+        if (!data || !data.token) {
+            ElMessage.error('登录失败，请检查用户名或密码')
+            return
         }
-    })
+        // 登录成功，保存token和用户信息
+        localStorage.setItem('token', data.token)
+        if (data.refreshToken) {
+            localStorage.setItem('refreshToken', data.refreshToken)
+        }
+        localStorage.setItem('userInfo', JSON.stringify(data.userinfo))
+        // 根据用户角色决定跳转的路径
+        if (data.userinfo?.userType === 2) {
+            router.push('/back/dashboard')
+        } else {
+            router.push('/')
+        }
+    } catch (err) {
+        if (!err?._notified) {
+            ElMessage.error(err?.message || '登录失败，请检查用户名或密码')
+        }
+    }
 }
 
 </script>

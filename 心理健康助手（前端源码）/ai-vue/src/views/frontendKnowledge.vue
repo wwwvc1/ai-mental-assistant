@@ -87,11 +87,16 @@
         const params = {
             sortField: 'publishedAt',
             sortDirection: 'desc',
-            ...pagination
+            pageNum: pagination.currentPage,
+            pageSize: pagination.size
         }
         getKnowledgeList(params).then(res => {
-            articleList.value = res.records
-            pagination.total = res.total
+            const list = Array.isArray(res) ? res : (res?.records ?? [])
+            articleList.value = list
+            pagination.total = res?.total ?? list.length
+        }).catch(() => {
+            articleList.value = []
+            pagination.total = 0
         })
     }
     // 获取封面图片
@@ -119,8 +124,9 @@
         }
         getPageList()
         getKnowledgeList(params).then(res => {
-            // console.log(res)
-            recommendList.value = res.records
+            recommendList.value = Array.isArray(res) ? res : (res?.records ?? [])
+        }).catch(() => {
+            recommendList.value = []
         })
     })
 </script>
